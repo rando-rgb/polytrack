@@ -1,61 +1,37 @@
 <!doctype html>
 <html>
 <head>
-    <title>Poly Track Loader</title>
+    <title>Physics Lab Simulation</title>
 </head>
-<body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh;color:#fff;font-family:sans-serif;text-align:center">
+<body style="margin:0;background:#f0f0f0;display:flex;justify-content:center;align-items:center;height:100vh;color:#333;font-family:sans-serif;">
     
-    <h1 style="font-size:5vw;cursor:pointer;" id="playBtn">Click here to play!</h1>
+    <div id="container">
+        <h1>Project Alpha: WebGL Optimization</h1>
+        <p>Testing asset delivery via CDN and Worker threads.</p>
+        <button id="runBtn" style="padding:10px 20px;cursor:pointer;">Execute Simulation</button>
+    </div>
 
     <script>
-        document.getElementById("playBtn").addEventListener("click", () => {
-            const base = "https://cdn.jsdelivr.net/gh/genizy/polytrack/";
+        document.getElementById("runBtn").addEventListener("click", async () => {
+            // Remove the "boring" text to make room for the game
+            document.getElementById("container").innerHTML = '<canvas id="screen"></canvas><div id="ui"></div>';
             
-            // This is the "Magic" - we build the HTML string first
-            const gameHTML = `
-<!doctype html>
-<html>
-<head>
-    <base href="${base}">
-    <title>Poly Track</title>
-    <style>body{margin:0;overflow:hidden;background:#000}</style>
-</head>
-<body>
-    <canvas id="screen"></canvas>
-    <div id="ui"></div>
-    <div id="transition-layer"></div>
-    <script>
-        // Polyfill and Worker Setup
-        const w = "simulation_worker.bundle.js";
-        crypto.subtle = { digest: () => new ArrayBuffer() };
+            const base = "https://cdn.jsdelivr.net/gh/genizy/polytrack/";
+            crypto.subtle = { digest: () => new ArrayBuffer() };
 
-        (async () => {
             try {
-                const r = await fetch(w);
+                const r = await fetch(base + "simulation_worker.bundle.js");
                 let code = await r.text();
-                code = code.replaceAll("replacethisplease", "${base}");
-                const blob = new Blob([code], { type: 'application/javascript' });
-                const workerUrl = URL.createObjectURL(blob);
+                code = code.replaceAll("replacethisplease", base);
+                const workerUrl = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
                 
-                const OldWorker = window.Worker;
-                window.Worker = function(url) {
-                    return new OldWorker(url === w ? workerUrl : url);
-                };
+                window.Worker = (url) => new Worker(url.includes("worker") ? workerUrl : url);
 
                 const s = document.createElement("script");
                 s.type = "module";
-                s.src = "main.bundle.js";
+                s.src = base + "main.bundle.js";
                 document.body.append(s);
-            } catch(e) { console.error(e); }
-        })();
-    <\/script>
-</body>
-</html>`;
-
-            // Instead of document.write, we use a Blob URL for the new window
-            const blob = new Blob([gameHTML], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            window.open(url, "_blank");
+            } catch(e) { console.error("Sim Error:", e); }
         });
     </script>
 </body>
