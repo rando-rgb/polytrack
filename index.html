@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+    <title>Poly Track Loader</title>
+</head>
+<body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh;color:#fff;font-family:sans-serif;text-align:center">
+    
+    <h1 style="font-size:5vw;cursor:pointer;" id="playBtn">Click here to play!</h1>
+
+    <script>
+        document.getElementById("playBtn").addEventListener("click", () => {
+            const base = "https://cdn.jsdelivr.net/gh/genizy/polytrack/";
+            
+            // This is the "Magic" - we build the HTML string first
+            const gameHTML = `
+<!doctype html>
+<html>
+<head>
+    <base href="${base}">
+    <title>Poly Track</title>
+    <style>body{margin:0;overflow:hidden;background:#000}</style>
+</head>
+<body>
+    <canvas id="screen"></canvas>
+    <div id="ui"></div>
+    <div id="transition-layer"></div>
+    <script>
+        // Polyfill and Worker Setup
+        const w = "simulation_worker.bundle.js";
+        crypto.subtle = { digest: () => new ArrayBuffer() };
+
+        (async () => {
+            try {
+                const r = await fetch(w);
+                let code = await r.text();
+                code = code.replaceAll("replacethisplease", "${base}");
+                const blob = new Blob([code], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                
+                const OldWorker = window.Worker;
+                window.Worker = function(url) {
+                    return new OldWorker(url === w ? workerUrl : url);
+                };
+
+                const s = document.createElement("script");
+                s.type = "module";
+                s.src = "main.bundle.js";
+                document.body.append(s);
+            } catch(e) { console.error(e); }
+        })();
+    <\/script>
+</body>
+</html>`;
+
+            // Instead of document.write, we use a Blob URL for the new window
+            const blob = new Blob([gameHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        });
+    </script>
+</body>
+</html>
